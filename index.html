@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoodFilm · Beta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1c1c27;
+    --border: #2a2a3a;
+    --accent: #e8c547;
+    --accent2: #f07850;
+    --text: #f0eee8;
+    --muted: #7a7a9a;
+    --radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  header {
+    padding: 2rem 2rem 0;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .beta-tag {
+    background: var(--accent2);
+    color: var(--bg);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    position: relative;
+    top: -0.5rem;
+  }
+
+  .tagline {
+    padding: 0.5rem 2rem 2rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* API KEY SCREEN */
+  #screen-apikey {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .apikey-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+  }
+
+  .apikey-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+
+  .apikey-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .apikey-desc {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .apikey-desc a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .apikey-desc a:hover { text-decoration: underline; }
+
+  .apikey-input-wrap {
+    position: relative;
+    margin-bottom: 1rem;
+  }
+
+  .apikey-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 3rem 0.85rem 1rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .apikey-input:focus { border-color: var(--accent); }
+  .apikey-input::placeholder { color: var(--muted); }
+
+  .apikey-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.25rem;
+  }
+
+  .apikey-save-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .apikey-save-row input[type=checkbox] { accent-color: var(--accent); }
+
+  .apikey-warning {
+    background: rgba(240,120,80,0.1);
+    border: 1px solid rgba(240,120,80,0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.78rem;
+    color: var(--accent2);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+  }
+
+  /* SCREEN SYSTEM */
+  .screen { display: none; animation: fadeIn 0.4s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* STEP FORM */
+  .form-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+
+  .step-indicator {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 2.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .step-dot {
+    height: 3px;
+    flex: 1;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background 0.3s ease;
+  }
+  .step-dot.done { background: var(--accent); }
+  .step-dot.active { background: var(--accent2); }
+
+  .step { display: none; }
+  .step.active { display: block; animation: fadeIn 0.35s ease; }
+
+  .step-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .step-question {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    line-height: 1.2;
+    margin-bottom: 2rem;
+    color: var(--text);
+  }
+
+  .step-question em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .option-btn {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .option-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .option-btn:hover::before { opacity: 0.06; }
+
+  .option-btn.selected { border-color: var(--accent); background: var(--card); }
+  .option-btn.selected::before { opacity: 0.12; }
+  .option-btn.selected .opt-check { opacity: 1; }
+
+  .opt-emoji { font-size: 2rem; position: relative; z-index: 1; }
+  .opt-label { font-weight: 500; position: relative; z-index: 1; line-height: 1.2; }
+  .opt-sub { font-size: 0.72rem; color: var(--muted); position: relative; z-index: 1; }
+
+  .opt-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+  }
+  .opt-check::after { content: '✓'; font-size: 0.65rem; color: var(--bg); font-weight: 700; }
+
+  .step-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .btn-back {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { border-color: var(--muted); color: var(--text); }
+
+  .btn-next {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border: none;
+    color: var(--bg);
+    padding: 0.85rem 2rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 280px;
+    margin-left: auto;
+  }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,197,71,0.25); }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-next.cta {
+    background: linear-gradient(135deg, var(--accent2) 0%, #e84040 100%);
+    max-width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+  }
+
+  /* LOADING */
+  #screen-loading {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 2rem;
+  }
+
+  .film-loader {
+    width: 60px;
+    height: 60px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-right-color: var(--accent2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    color: var(--muted);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+  /* RESULTS */
+  #screen-results { padding: 0 1.5rem 4rem; max-width: 700px; margin: 0 auto; }
+
+  .results-header {
+    text-align: center;
+    padding: 1rem 0 2.5rem;
+  }
+
+  .results-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+  }
+
+  .results-message {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+    line-height: 1.3;
+    color: var(--text);
+  }
+
+  .movies-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .movie-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.4rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s;
+    animation: slideIn 0.4s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-15px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .movie-card:nth-child(1) { animation-delay: 0.05s; }
+  .movie-card:nth-child(2) { animation-delay: 0.1s; }
+  .movie-card:nth-child(3) { animation-delay: 0.15s; }
+  .movie-card:nth-child(4) { animation-delay: 0.2s; }
+  .movie-card:nth-child(5) { animation-delay: 0.25s; }
+
+  .movie-card:hover { border-color: var(--accent); transform: translateX(4px); }
+
+  .movie-emoji { font-size: 2.2rem; }
+  .movie-title { font-family: 'DM Serif Display', serif; font-size: 1.05rem; margin-bottom: 0.2rem; }
+  .movie-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem; }
+  .movie-why { font-size: 0.82rem; color: #a0a0c0; line-height: 1.4; }
+
+  .movie-vibe {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    align-self: flex-start;
+  }
+
+  .btn-retry {
+    display: block;
+    width: 100%;
+    margin-top: 2rem;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    padding: 0.9rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-retry:hover { border-color: var(--accent); color: var(--accent); }
+
+  .change-key-btn {
+    display: inline-block;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    margin-top: 0.75rem;
+    text-decoration: underline;
+  }
+  .change-key-btn:hover { color: var(--text); }
+
+  .footer-note {
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    opacity: 0.6;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 480px) {
+    .options-grid { grid-template-columns: repeat(2, 1fr); }
+    .movie-card { grid-template-columns: auto 1fr; }
+    .movie-vibe { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MoodFilm</div>
+  <span class="beta-tag">Beta</span>
+</header>
+<div class="tagline">Tu próxima película favorita, según cómo te sientes</div>
+
+<!-- SCREEN: API KEY -->
+<div class="screen" id="wrap-apikey">
+<div id="screen-apikey">
+  <div class="apikey-card">
+    <div class="apikey-icon">🔑</div>
+    <div class="apikey-title">Introduce tu API Key</div>
+    <p class="apikey-desc">
+      MoodFilm usa la API de Anthropic (Claude) para generar recomendaciones personalizadas.
+      Necesitas una API key gratuita de <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a>.
+      Tu key <strong>nunca sale de tu navegador</strong> — se usa directamente para llamar a la API.
+    </p>
+    <div class="apikey-warning">
+      ⚠️ Esta es una versión de demostración. En producción, nunca expongas tu API key en el frontend — usa un backend o un proxy seguro.
+    </div>
+    <div class="apikey-input-wrap">
+      <input type="password" class="apikey-input" id="apikey-input" placeholder="sk-ant-api03-..." autocomplete="off" />
+      <button class="apikey-toggle" id="apikey-toggle" onclick="toggleKeyVisibility()">👁</button>
+    </div>
+    <div class="apikey-save-row">
+      <input type="checkbox" id="save-key" checked>
+      <label for="save-key">Recordar en este navegador (localStorage)</label>
+    </div>
+    <button class="btn-next" style="max-width:100%; width:100%;" onclick="saveApiKey()">Continuar →</button>
+  </div>
+</div>
+</div>
+
+<!-- SCREEN: FORM -->
+<div class="screen active" id="wrap-form">
+<div id="screen-form">
+  <div class="form-container">
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot-0"></div>
+      <div class="step-dot" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <div class="step-dot" id="dot-3"></div>
+      <div class="step-dot" id="dot-4"></div>
+      <div class="step-dot" id="dot-5"></div>
+    </div>
+
+    <!-- STEP 0 -->
+    <div class="step active" id="step-0">
+      <div class="step-label">Paso 1 de 6 · Estado de ánimo</div>
+      <h2 class="step-question">¿Cómo estás <em>ahora mismo</em>?</h2>
+      <div class="options-grid" id="opts-mood">
+        <button class="option-btn" data-value="feliz"><span class="opt-check"></span><span class="opt-emoji">😊</span><span class="opt-label">Feliz</span><span class="opt-sub">Con energía positiva</span></button>
+        <button class="option-btn" data-value="triste"><span class="opt-check"></span><span class="opt-emoji">😔</span><span class="opt-label">Melancólico</span><span class="opt-sub">Necesito procesar</span></button>
+        <button class="option-btn" data-value="ansioso"><span class="opt-check"></span><span class="opt-emoji">😰</span><span class="opt-label">Ansioso</span><span class="opt-sub">La mente no para</span></button>
+        <button class="option-btn" data-value="aburrido"><span class="opt-check"></span><span class="opt-emoji">😑</span><span class="opt-label">Aburrido</span><span class="opt-sub">Necesito estímulo</span></button>
+        <button class="option-btn" data-value="romántico"><span class="opt-check"></span><span class="opt-emoji">🥰</span><span class="opt-label">Romántico</span><span class="opt-sub">Corazón abierto</span></button>
+        <button class="option-btn" data-value="enojado"><span class="opt-check"></span><span class="opt-emoji">😤</span><span class="opt-label">Frustrado</span><span class="opt-sub">Necesito desahogo</span></button>
+        <button class="option-btn" data-value="curioso"><span class="opt-check"></span><span class="opt-emoji">🤔</span><span class="opt-label">Curioso</span><span class="opt-sub">Quiero aprender</span></button>
+        <button class="option-btn" data-value="nostálgico"><span class="opt-check"></span><span class="opt-emoji">🌅</span><span class="opt-label">Nostálgico</span><span class="opt-sub">Entre el pasado y hoy</span></button>
+      </div>
+      <div class="step-nav">
+        <button class="btn-next" id="next-0" disabled onclick="nextStep(0)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="step" id="step-1">
+      <div class="step-label">Paso 2 de 6 · Experiencia</div>
+      <h2 class="step-question">¿Qué <em>experiencia</em> buscas?</h2>
+      <div class="options-grid" id="opts-experience">
+        <button class="option-btn" data-value="reir"><span class="opt-check"></span><span class="opt-emoji">😂</span><span class="opt-label">Reírme</span><span class="opt-sub">Comedia que enganche</span></button>
+        <button class="option-btn" data-value="llorar"><span class="opt-check"></span><span class="opt-emoji">😭</span><span class="opt-label">Emocionarme</span><span class="opt-sub">Catarsis total</span></button>
+        <button class="option-btn" data-value="suspenso"><span class="opt-check"></span><span class="opt-emoji">😱</span><span class="opt-label">Suspenso</span><span class="opt-sub">Al borde del asiento</span></button>
+        <button class="option-btn" data-value="pensar"><span class="opt-check"></span><span class="opt-emoji">🧠</span><span class="opt-label">Pensar</span><span class="opt-sub">Película que desafíe</span></button>
+        <button class="option-btn" data-value="escapar"><span class="opt-check"></span><span class="opt-emoji">🚀</span><span class="opt-label">Escapar</span><span class="opt-sub">Otro mundo posible</span></button>
+        <button class="option-btn" data-value="inspirar"><span class="opt-check"></span><span class="opt-emoji">✨</span><span class="opt-label">Inspirarme</span><span class="opt-sub">Que me deje algo</span></button>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="prevStep(1)">← Atrás</button>
+        <button class="btn-next" id="next-1" disabled onclick="nextStep(1)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step" id="step-2">
+      <div class="step-label">Paso 3 de 6 · Energía</div>
+      <h2 class="step-question">¿Cuánta <em>energía</em> tienes para ver la peli?</h2>
+      <div class="options-grid" id="opts-energy">
+        <button class="option-btn" data-value="máxima"><span class="opt-check"></span><span class="opt-emoji">⚡</span><span class="opt-label">A tope</span><span class="opt-sub">Lista de épicas</span></button>
+        <button class="option-btn" data-value="media"><span class="opt-check"></span><span class="opt-emoji">🔥</span><span class="opt-label">Normal</span><span class="opt-sub">Lo que venga</span></button>
+        <button class="option-btn" data-value="baja"><span class="opt-check"></span><span class="opt-emoji">🌙</span><span class="opt-label">Cansado</span><span class="opt-sub">Algo ligero</span></button>
+        <button class="option-btn" data-value="sofa"><span class="opt-check"></span><span class="opt-emoji">🛋️</span><span class="opt-label">Modo sofá</span><span class="opt-sub">Que no exija nada</span></button>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="prevStep(2)">← Atrás</button>
+        <button class="btn-next" id="next-2" disabled onclick="nextStep(2)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step" id="step-3">
+      <div class="step-label">Paso 4 de 6 · Compañía</div>
+      <h2 class="step-question">¿Con <em>quién</em> la ves?</h2>
+      <div class="options-grid" id="opts-company">
+        <button class="option-btn" data-value="solo"><span class="opt-check"></span><span class="opt-emoji">🧘</span><span class="opt-label">Solo/a</span><span class="opt-sub">Mi momento</span></button>
+        <button class="option-btn" data-value="pareja"><span class="opt-check"></span><span class="opt-emoji">💑</span><span class="opt-label">En pareja</span><span class="opt-sub">Noche especial</span></button>
+        <button class="option-btn" data-value="amigos"><span class="opt-check"></span><span class="opt-emoji">🍿</span><span class="opt-label">Amigos</span><span class="opt-sub">Plan grupal</span></button>
+        <button class="option-btn" data-value="familia"><span class="opt-check"></span><span class="opt-emoji">👨‍👩‍👧</span><span class="opt-label">Familia</span><span class="opt-sub">Para todos</span></button>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="prevStep(3)">← Atrás</button>
+        <button class="btn-next" id="next-3" disabled onclick="nextStep(3)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step" id="step-4">
+      <div class="step-label">Paso 5 de 6 · Época</div>
+      <h2 class="step-question">¿De <em>qué época</em> la quieres?</h2>
+      <div class="options-grid" id="opts-era">
+        <button class="option-btn" data-value="reciente"><span class="opt-check"></span><span class="opt-emoji">📱</span><span class="opt-label">Reciente</span><span class="opt-sub">2015 hasta hoy</span></button>
+        <button class="option-btn" data-value="2000s"><span class="opt-check"></span><span class="opt-emoji">💿</span><span class="opt-label">2000s</span><span class="opt-sub">2000 — 2015</span></button>
+        <button class="option-btn" data-value="clásica"><span class="opt-check"></span><span class="opt-emoji">🎞️</span><span class="opt-label">Clásica</span><span class="opt-sub">Antes del 2000</span></button>
+        <button class="option-btn" data-value="cualquiera"><span class="opt-check"></span><span class="opt-emoji">🎲</span><span class="opt-label">Cualquiera</span><span class="opt-sub">Me da igual</span></button>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="prevStep(4)">← Atrás</button>
+        <button class="btn-next" id="next-4" disabled onclick="nextStep(4)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step" id="step-5">
+      <div class="step-label">Paso 6 de 6 · Idioma</div>
+      <h2 class="step-question">¿Qué <em>idioma/origen</em> prefieres?</h2>
+      <div class="options-grid" id="opts-lang">
+        <button class="option-btn" data-value="cualquiera"><span class="opt-check"></span><span class="opt-emoji">🌍</span><span class="opt-label">Cualquiera</span><span class="opt-sub">Sin filtros</span></button>
+        <button class="option-btn" data-value="inglés"><span class="opt-check"></span><span class="opt-emoji">🇺🇸</span><span class="opt-label">Inglés</span><span class="opt-sub">Hollywood y más</span></button>
+        <button class="option-btn" data-value="español"><span class="opt-check"></span><span class="opt-emoji">🇪🇸</span><span class="opt-label">Español</span><span class="opt-sub">Cine en español</span></button>
+        <button class="option-btn" data-value="europeo"><span class="opt-check"></span><span class="opt-emoji">🇫🇷</span><span class="opt-label">Europeo</span><span class="opt-sub">Francia, Italia…</span></button>
+        <button class="option-btn" data-value="asiático"><span class="opt-check"></span><span class="opt-emoji">🇯🇵</span><span class="opt-label">Asiático</span><span class="opt-sub">Japón, Corea…</span></button>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="prevStep(5)">← Atrás</button>
+        <button class="btn-next cta" id="next-5" disabled onclick="goToApiKey()">🎬 Ver mis películas</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- SCREEN: LOADING -->
+<div class="screen" id="wrap-loading">
+<div id="screen-loading">
+  <div class="film-loader"></div>
+  <div class="loading-text" id="loading-msg">Analizando tu estado…</div>
+</div>
+</div>
+
+<!-- SCREEN: RESULTS -->
+<div class="screen" id="wrap-results">
+<div id="screen-results">
+  <div class="results-header">
+    <div class="results-tag">🎬 Recomendaciones para ti</div>
+    <p class="results-message" id="result-message"></p>
+  </div>
+  <div class="movies-list" id="movies-list"></div>
+  <button class="btn-retry" onclick="restart()">↩ Volver a empezar</button>
+  <div style="text-align:center;">
+    <button class="change-key-btn" onclick="changeApiKey()">🔑 Cambiar API key</button>
+  </div>
+</div>
+</div>
+
+<div class="footer-note">MoodFilm Beta · Powered by Claude AI · Tu API key nunca abandona tu navegador</div>
+
+<script>
+  const state = { mood: '', experience: '', energy: '', company: '', era: '', lang: '' };
+  const fieldMap = ['mood', 'experience', 'energy', 'company', 'era', 'lang'];
+  let currentStep = 0;
+  let apiKey = '';
+
+  // Load saved key silently — no redirect, user starts on the form
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('moodfilm_apikey');
+    if (saved) {
+      apiKey = saved;
+      document.getElementById('apikey-input').value = saved;
+    }
+  });
+
+  // Called when user clicks "Ver mis películas" at the end of the form
+  function goToApiKey() {
+    if (apiKey) {
+      // Already have a key — skip the key screen and go straight to loading
+      submitForm();
+    } else {
+      showScreen('wrap-apikey');
+    }
+  }
+
+  function saveApiKey() {
+    const val = document.getElementById('apikey-input').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      alert('La API key debe empezar por sk-ant-\nObtén una en console.anthropic.com');
+      return;
+    }
+    apiKey = val;
+    if (document.getElementById('save-key').checked) {
+      localStorage.setItem('moodfilm_apikey', val);
+    }
+    submitForm();
+  }
+
+  function changeApiKey() {
+    localStorage.removeItem('moodfilm_apikey');
+    apiKey = '';
+    document.getElementById('apikey-input').value = '';
+    showScreen('wrap-apikey');
+  }
+
+  function toggleKeyVisibility() {
+    const inp = document.getElementById('apikey-input');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  // Option selection
+  document.querySelectorAll('.options-grid').forEach(grid => {
+    grid.addEventListener('click', e => {
+      const btn = e.target.closest('.option-btn');
+      if (!btn) return;
+      grid.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      const stepNum = fieldMap.indexOf(grid.id.replace('opts-', ''));
+      state[fieldMap[stepNum]] = btn.dataset.value;
+      const nextBtn = document.getElementById('next-' + stepNum);
+      if (nextBtn) nextBtn.disabled = false;
+    });
+  });
+
+  function nextStep(from) {
+    document.getElementById('step-' + from).classList.remove('active');
+    const next = from + 1;
+    document.getElementById('step-' + next).classList.add('active');
+    updateDots(next);
+    currentStep = next;
+  }
+
+  function prevStep(from) {
+    document.getElementById('step-' + from).classList.remove('active');
+    const prev = from - 1;
+    document.getElementById('step-' + prev).classList.add('active');
+    updateDots(prev);
+    currentStep = prev;
+  }
+
+  function updateDots(active) {
+    for (let i = 0; i < 6; i++) {
+      const dot = document.getElementById('dot-' + i);
+      dot.className = 'step-dot' + (i < active ? ' done' : i === active ? ' active' : '');
+    }
+  }
+
+  const loadingMsgs = [
+    'Analizando tu estado de ánimo…',
+    'Consultando el archivo de cine…',
+    'Claude está eligiendo para ti…',
+    'Seleccionando las mejores opciones…',
+    'Casi listo…'
+  ];
+
+  async function submitForm() {
+    showScreen('wrap-loading');
+    let msgIdx = 0;
+    const msgEl = document.getElementById('loading-msg');
+    const interval = setInterval(() => {
+      msgEl.textContent = loadingMsgs[msgIdx % loadingMsgs.length];
+      msgIdx++;
+    }, 1200);
+
+    const prompt = `Eres un experto en cine. El usuario tiene este perfil:
+- Estado de ánimo: ${state.mood}
+- Experiencia buscada: ${state.experience}
+- Nivel de energía: ${state.energy}
+- Compañía: ${state.company}
+- Época preferida: ${state.era}
+- Idioma/origen: ${state.lang}
+
+Recomienda exactamente 5 películas perfectas para este perfil. Responde ÚNICAMENTE con un JSON válido con esta estructura (sin texto adicional, sin markdown, sin explicaciones fuera del JSON):
+
+{
+  "message": "Frase personal y cálida de máximo 20 palabras explicando por qué estas pelis encajan con su estado",
+  "movies": [
+    {
+      "title": "Título de la película",
+      "year": "Año",
+      "genre": "Género principal",
+      "emoji": "Un emoji que represente la película",
+      "why": "Por qué encaja perfectamente con su perfil ahora mismo (máx 15 palabras)",
+      "vibe": "Una palabra que describe el vibe (ej: ÍNTIMA, ÉPICA, OSCURA...)"
+    }
+  ]
+}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1200,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      clearInterval(interval);
+
+      const raw = data.content[0].text.trim();
+      // Strip possible markdown code fences
+      const clean = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+      const parsed = JSON.parse(clean);
+      renderResults(parsed);
+
+    } catch (err) {
+      clearInterval(interval);
+      console.error(err);
+      if (err.message && err.message.includes('401')) {
+        alert('API key inválida o sin permisos. Revísala en console.anthropic.com');
+        apiKey = '';
+        localStorage.removeItem('moodfilm_apikey');
+        document.getElementById('apikey-input').value = '';
+        showScreen('wrap-apikey');
+      } else if (err.message && err.message.includes('429')) {
+        alert('Has superado el límite de peticiones. Espera un momento e inténtalo de nuevo.');
+        showScreen('wrap-form');
+      } else {
+        alert('Error al llamar a la API de Anthropic:\n' + err.message);
+        showScreen('wrap-form');
+      }
+    }
+  }
+
+  function renderResults(data) {
+    document.getElementById('result-message').textContent = data.message || '¡Aquí tienes tu selección!';
+    const list = document.getElementById('movies-list');
+    list.innerHTML = '';
+    (data.movies || []).forEach(m => {
+      list.innerHTML += `
+        <div class="movie-card">
+          <div class="movie-emoji">${m.emoji || '🎬'}</div>
+          <div class="movie-info">
+            <div class="movie-title">${m.title}</div>
+            <div class="movie-meta">${m.year} · ${m.genre}</div>
+            <div class="movie-why">${m.why}</div>
+          </div>
+          <div class="movie-vibe">${m.vibe}</div>
+        </div>`;
+    });
+    showScreen('wrap-results');
+  }
+
+  function restart() {
+    Object.keys(state).forEach(k => state[k] = '');
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.btn-next').forEach(b => b.disabled = true);
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-0').classList.add('active');
+    updateDots(0);
+    currentStep = 0;
+    showScreen('wrap-form');
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+</script>
+</body>
+</html>
